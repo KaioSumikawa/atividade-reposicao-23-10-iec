@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Builds e relatórios
+dist/
+coverage/
+
+# Logs
+*.log
+
+# Arquivos do sistema e editor
+.DS_Store
+Thumbs.db
+.vscode/
