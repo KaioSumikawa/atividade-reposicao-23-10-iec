@@ -65,13 +65,13 @@ jobs:
         run: pnpm run test:coverage
 
       - name: 9. Analisar código com SonarQube Cloud
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=kaiosumikawa
-            -Dsonar.projectKey=877d03d47327dc18205fee544e3479dfdfaa69ec
+            -Dsonar.projectKey=KaioSumikawa_atividade-reposicao-23-10-iec
             -Dsonar.sources=backend/src
             -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
             -Dsonar.qualitygate.wait=true
@@ -80,7 +80,7 @@ jobs:
         if: always()
         run: |
           echo "## Relatório de CI e cobertura de código" >> "$GITHUB_STEP_SUMMARY"
-          echo "Execução referente ao commit \`${{ github.sha }}\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "Execução referente ao commit `${{ github.sha }}`." >> "$GITHUB_STEP_SUMMARY"
           echo "As verificações de código, os testes e a análise de qualidade foram executados conforme o resultado das etapas anteriores." >> "$GITHUB_STEP_SUMMARY"
 
       - name: 11. Salvar relatório de cobertura
