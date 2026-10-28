@@ -20,9 +20,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Validações e testes
+  # Job 1: Validações, testes e análise de qualidade
   validacoes-e-testes:
-    name: 1. Qualidade, Tipos e Testes Unitários
+    name: 1. Qualidade, Tipos, Testes e SonarQube
     runs-on: ubuntu-latest
 
     env:
@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: 1. Baixar o código-fonte
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 2. Habilitar o pnpm
         uses: pnpm/action-setup@v4
@@ -62,14 +64,26 @@ jobs:
         working-directory: backend
         run: pnpm run test:coverage
 
-      - name: 9. Publicar resumo da execução
+      - name: 9. Analisar código com SonarQube Cloud
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=kaiosumikawa
+            -Dsonar.projectKey=877d03d47327dc18205fee544e3479dfdfaa69ec
+            -Dsonar.sources=backend/src
+            -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
+            -Dsonar.qualitygate.wait=true
+
+      - name: 10. Publicar resumo da execução
         if: always()
         run: |
           echo "## Relatório de CI e cobertura de código" >> "$GITHUB_STEP_SUMMARY"
           echo "Execução referente ao commit \`${{ github.sha }}\`." >> "$GITHUB_STEP_SUMMARY"
-          echo "As verificações de código e os testes foram executados conforme o resultado das etapas anteriores." >> "$GITHUB_STEP_SUMMARY"
+          echo "As verificações de código, os testes e a análise de qualidade foram executados conforme o resultado das etapas anteriores." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 10. Salvar relatório de cobertura
+      - name: 11. Salvar relatório de cobertura
         uses: actions/upload-artifact@v4
         if: always()
         with:
