@@ -7,16 +7,19 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
     exclude: ['node_modules', 'dist'],
     coverage: {
-      // Define o provedor nativo V8
+      // Define o provedor de cobertura
       provider: 'v8',
 
-      // Diretório onde os relatórios HTML e LCOV serão salvos
+      // Diretório onde os relatórios serão salvos
       reportsDirectory: './coverage',
 
-      // Padrões de arquivos incluídos na análise de cobertura
+      // Formatos dos relatórios, incluindo LCOV para o SonarCloud
+      reporter: ['text', 'html', 'lcov'],
+
+      // Arquivos incluídos na análise de cobertura
       include: ['src/**/*.ts'],
 
-      // Arquivos e pastas que devem ser desconsiderados
+      // Arquivos desconsiderados
       exclude: [
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
@@ -25,13 +28,13 @@ export default defineConfig({
         'src/migrations/**',
       ],
 
-      // Definição de limites mínimos obrigatórios (Quality Gate local)
+      // Limites mínimos de cobertura
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 75,
-        statements: 80
-      }
+        statements: 80,
+      },
     },
   },
 });
