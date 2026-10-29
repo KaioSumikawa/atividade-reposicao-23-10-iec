@@ -1,7 +1,6 @@
-yaml
 name: Monorepo CD Pipeline (Entrega de Produção)
 
-on:
+"on":
   # Dispara quando o workflow de CI termina na branch main
   workflow_run:
     workflows: ["Monorepo CI Pipeline"]
