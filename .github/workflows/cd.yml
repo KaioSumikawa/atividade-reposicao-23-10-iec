@@ -1,14 +1,16 @@
+yaml
 name: Monorepo CD Pipeline (Entrega de Produção)
 
 on:
-  # Dispara automaticamente apenas quando o workflow de CI for concluído na branch main
+  # Dispara quando o workflow de CI termina na branch main
   workflow_run:
     workflows: ["Monorepo CI Pipeline"]
     types:
       - completed
     branches:
       - main
-  # Permite disparo manual controlado pelo painel web do GitHub Actions
+
+  # Permite disparo manual pelo GitHub Actions
   workflow_dispatch:
 
 concurrency:
@@ -18,15 +20,17 @@ concurrency:
 jobs:
   publicar-imagem-docker:
     name: 1. Compilar e Publicar Imagem no Docker Hub
-    # Só executa se o pipeline de CI disparado tiver sido concluído com sucesso (ou via disparo manual)
+    # Executa somente se o CI passar ou se for disparado manualmente
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: 1. Checkout do Código-Fonte
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
-      - name: 2. Configurar QEMU (Suporte a Múltiplas Arquiteturas)
+      - name: 2. Configurar QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: 3. Configurar Docker Buildx
@@ -48,7 +52,7 @@ jobs:
             type=sha,format=short
             type=ref,event=tag
 
-      - name: 6. Compilar e Publicar Imagem (Build and Push com Cache)
+      - name: 6. Compilar e Publicar Imagem
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -59,9 +63,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 7. Resumo da Entrega no Step Summary
+      - name: 7. Disparar Deploy no Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          echo "### Entrega Contínua Concluída com Sucesso" >> $GITHUB_STEP_SUMMARY
-          echo "- **Registro**: Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "- **Imagem Publicada**: \`${{ secrets.DOCKERHUB_USERNAME }}/fatec-backend-api:latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::O secret RENDER_DEPLOY_HOOK não está configurado."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error \
+            --retry 3 \
+            --retry-delay 5 \
+            "$RENDER_DEPLOY_HOOK"
+
+      - name: 8. Resumo da Entrega
+        run: |
+          echo "### Entrega Contínua Concluída com Sucesso" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Registro:** Docker Hub" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Imagem publicada:** \`${{ secrets.DOCKERHUB_USERNAME }}/fatec-backend-api:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commit:** \`${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Deploy Hook do Render:** acionado" >> "$GITHUB_STEP_SUMMARY"
